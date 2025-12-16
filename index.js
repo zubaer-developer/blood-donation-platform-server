@@ -42,32 +42,75 @@ async function run() {
 
     // ============ API Routes Will Go Here ============
 
-    // Auth Routes
+    // Auth Routes ===========
+    // User Registration
     app.post("/auth/register", async (req, res) => {
-      res.send({ message: "Registration endpoint" });
+      const {
+        email,
+        password,
+        confirm_password,
+        name,
+        avatar,
+        bloodGroup,
+        district,
+        upazila,
+      } = req.body;
+
+      if (!email || !password || password !== confirm_password) {
+        return res
+          .status(400)
+          .send({ message: "Invalid input or passwords do not match." });
+      }
+
+      try {
+        const existingUser = await usersCollection.findOne({ email });
+        if (existingUser) {
+          return res
+            .status(409)
+            .send({ message: "User with this email already exists." });
+        }
+
+        // Password hash
+        const hashedPassword = await hashPassword(password);
+
+        // Create User document
+        const newUser = getUserDocument({
+          name,
+          email,
+          avatar,
+          bloodGroup,
+          district,
+          upazila,
+          password: hashedPassword,
+        });
+
+        const result = await usersCollection.insertOne(newUser);
+
+        // Create JWT Token
+        const token = createToken({
+          email,
+          userId: result.insertedId,
+          role: "donor",
+          status: "active",
+        });
+
+        res
+          .status(201)
+          .send({
+            message: "User registered successfully",
+            token,
+            user: { name, email, role: "donor", status: "active" },
+          });
+      } catch (error) {
+        console.error("Registration error:", error);
+        res
+          .status(500)
+          .send({ message: "An error occurred during registration." });
+      }
     });
 
     app.post("/auth/login", async (req, res) => {
       res.send({ message: "Login endpoint" });
-    });
-
-    // USERS API created for testing
-    app.post("/users", async (req, res) => {
-      try {
-        const user = req.body;
-        const existingUser = await usersCollection.findOne({
-          email: user.email,
-        });
-
-        if (existingUser) {
-          return res.send({ message: "User already exists", insertedId: null });
-        }
-
-        const result = await usersCollection.insertOne(user);
-        res.send(result);
-      } catch (error) {
-        res.status(500).send({ message: "Failed to add user" });
-      }
     });
 
     // ============ End of Routes ============
