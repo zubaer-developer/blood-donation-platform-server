@@ -94,13 +94,11 @@ async function run() {
           status: "active",
         });
 
-        res
-          .status(201)
-          .send({
-            message: "User registered successfully",
-            token,
-            user: { name, email, role: "donor", status: "active" },
-          });
+        res.status(201).send({
+          message: "User registered successfully",
+          token,
+          user: { name, email, role: "donor", status: "active" },
+        });
       } catch (error) {
         console.error("Registration error:", error);
         res
@@ -109,8 +107,50 @@ async function run() {
       }
     });
 
+    // User Login
     app.post("/auth/login", async (req, res) => {
-      res.send({ message: "Login endpoint" });
+      const { email, password } = req.body;
+
+      try {
+        const user = await usersCollection.findOne({ email });
+
+        if (!user) {
+          return res
+            .status(401)
+            .send({ message: "Invalid credentials: Email not found." });
+        }
+
+        // Password Matching
+        const isPasswordValid = await comparePassword(password, user.password);
+
+        if (!isPasswordValid) {
+          return res
+            .status(401)
+            .send({ message: "Invalid credentials: Password incorrect." });
+        }
+
+        // Create JWT Token
+        const token = createToken({
+          email: user.email,
+          userId: user._id,
+          role: user.role,
+          status: user.status,
+        });
+
+        res.send({
+          message: "Login successful",
+          token,
+          user: {
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            status: user.status,
+          },
+        });
+      } catch (error) {
+        console.error("Login error:", error);
+        res.status(500).send({ message: "An error occurred during login." });
+      }
     });
 
     // ============ End of Routes ============
