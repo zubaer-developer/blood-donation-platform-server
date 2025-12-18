@@ -2,12 +2,27 @@ const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion } = require("mongodb");
 require("dotenv").config();
+const {
+  hashPassword,
+  comparePassword,
+  createToken,
+} = require("./utils/auth.utils");
+const { getUserDocument } = require("./utils/user.model");
 
 const app = express();
 const port = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+const corsOptions = {
+  origin: [
+    "http://localhost:5173",
+    "https://blood-donation-platform-client.vercel.app",
+  ],
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  credentials: true,
+  optionsSuccessStatus: 204,
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // MongoDB Connection URI
@@ -43,6 +58,7 @@ async function run() {
     // ============ API Routes Will Go Here ============
 
     // Auth Routes ===========
+
     // User Registration
     app.post("/auth/register", async (req, res) => {
       const {
