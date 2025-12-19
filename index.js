@@ -17,6 +17,7 @@ const corsOptions = {
   origin: [
     "http://localhost:5173",
     "https://blood-donation-platform-client.vercel.app",
+    "https://blood-donation-platform-43f5b.web.app",
   ],
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   credentials: true,
