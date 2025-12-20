@@ -8,6 +8,7 @@ const {
   createToken,
 } = require("./utils/auth.utils");
 const { getUserDocument } = require("./utils/user.model");
+const { verifyToken } = require("./utils/verifyToken");
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -167,6 +168,32 @@ async function run() {
       } catch (error) {
         console.error("Login error:", error);
         res.status(500).send({ message: "An error occurred during login." });
+      }
+    }); // End Auth
+
+    // Donation Requests Route ===========
+
+    app.post("/requests", verifyToken, async (req, res) => {
+      const requestData = req.body;
+      const userEmail = req.decodedUser.email;
+
+      const newRequest = {
+        ...requestData,
+        requesterEmail: userEmail,
+        createdAt: new Date(),
+        lastUpdated: new Date(),
+      };
+
+      try {
+        const result = await donationRequestsCollection.insertOne(newRequest);
+
+        res.status(201).send({
+          message: "Donation request created successfully.",
+          insertedId: result.insertedId,
+        });
+      } catch (error) {
+        console.error("Error creating donation request:", error);
+        res.status(500).send({ message: "Failed to process the request." });
       }
     });
 
